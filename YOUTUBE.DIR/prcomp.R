@@ -4,8 +4,8 @@
 # Using prcomp and varimax for PCA in R www.youtube.com/watch?v=PSuvMBtvJcA 
 
 library(lattice)
-
-my.wines <- read.csv("http://steviep42.bitbucket.org/YOUTUBE.DIR/wines.csv", header=TRUE)
+url <- "https://raw.githubusercontent.com/steviep42/youtube/master/YOUTUBE.DIR/wines.csv"
+my.wines <- read.csv(url, header=TRUE)
 
 # Look at the correlations
 
