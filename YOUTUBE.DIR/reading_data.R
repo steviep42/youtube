@@ -15,7 +15,8 @@
 
 # Let's download a CSV file and then read it in.
 
-download.file("http://steviep42.bitbucket.org/data/userprofile.csv","userprofile.csv")
+url <- "https://raw.githubusercontent.com/steviep42/youtube/master/YOUTUBE.DIR/userprofile.csv"
+download.file(url,"userprofile.csv")
 file.info("userprofile.csv")  # Works on all Operating systems
 
 # These next two are specific to UNIX and Mac OSX
@@ -39,7 +40,7 @@ myFile <- read.table("userprofile.csv",header=T,sep=",")
 
 # Or
 
-url <- "http://steviep42.bitbucket.org/data/userprofile.csv"
+url <- "https://raw.githubusercontent.com/steviep42/youtube/master/YOUTUBE.DIR/userprofile.csv"
 
 myFile <- read.table(url,header=T,sep=",")
 
@@ -71,32 +72,19 @@ myFile <- read.table("userprofile.csv",header=T,sep=",",colClasses=classes)
 # Note that you don't have to download the file. You can read it directly from the 
 # Internet using the URL
 
-url <- "http://steviep42.bitbucket.org/data/userprofile.csv"
+url <- "https://raw.githubusercontent.com/steviep42/youtube/master/YOUTUBE.DIR/userprofile.csv"
 mydata <- read.table(url,header=T,sep=",")
-
-# We can also read zip files from within R but it is a bit more involved.
-
-url <- "http://steviep42.bitbucket.org/data/SFFoodProgram_Complete_Data.zip"
-dir.create("temp_dir")    # create a directory to hold the zip file
-
-setwd("temp_dir")
-download.file(url,"SFFood.zip")
-system("unzip -l SFFood.zip")  # Lists the files - On MS Windows this won't work.
-
-businesses  <- read.csv(unz("SFFood.zip","businesses_plus.csv"),header=T,stringsAsFactors=F)
-
 
 ## Reading spreadsheets 
 
 # The recommended way is to save the ss to a .csv file
-# and then read it in using read.table  There is a package that will try to directly
-# read the spreadsheet itself. You need to install a package called "gdata"
+# and then read it in using read.table. However there is a package that will try to directly
+# read the spreadsheet itself. You need to install a package called "readxl"
 
-library(gdata)
-data <- read.xls("http://steviep42.bitbucket.org/data/example_excel_spreadsheet.xlsx")
+library(readxl)
+url <- "https://raw.githubusercontent.com/steviep42/youtube/master/YOUTUBE.DIR/example_excel_spreadsheet.xlsx" 
+download.file(url,"example_excel_spreadsheet.xlsx")
+data <- read_excel("example_excel_spreadsheet.xlsx")
 
-# Listing files in a directory. Sometimes you know in advance what files you want to read in
-# Other times you will download a zip file, unzip it, and then need to look through the filenames
-# to decided which ones you want to open and process. 
 
 
