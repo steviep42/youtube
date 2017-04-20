@@ -10,7 +10,7 @@
 # http://nsaunders.wordpress.com/2010/08/20/a-brief-introduction-to-apply-in-r/
 # 
 
-my.snps <- read.table("http://steviep42.bitbucket.org/YOUTUBE.DIR/nsnps.csv",header=F,sep=" ")
+my.snps <- read.table("https://raw.githubusercontent.com/steviep42/youtube/master/YOUTUBE.DIR/nsnps.csv",header=F,sep=" ")
 names(my.snps) <- c("X1", "X2", "SNP1", "SNP2")
 new.snps       <- cbind(my.snps, co=sample(c("case","control"), 30, TRUE))
 
