@@ -1,5 +1,5 @@
 # dplyr and pipes
-
+# Pittard, Steve -  wsp@emory.edu In support of YouTube video
 library(dplyr)
 
 data(mtcars)
