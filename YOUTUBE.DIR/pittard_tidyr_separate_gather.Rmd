@@ -1,0 +1,68 @@
+---
+title: "Express R - separate Steve Pittard"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+```
+
+Consider the following simulated data. While it is a *toy* data set it is nonetheless demonstrative of some data I've seen previously in terms of format wherein some columns might encode two or more values. Check this out
+
+```{r}
+# Some example data
+df <- data.frame(id=c("001","002","003","004","005","006"),
+                 name=c("Tom Smith","Dee Ford","Mary Russell",
+                                     "Frank Jones","Lisa Miller","Don Draper"),
+                 age=c(32,43,22,39,50,60),
+                 location=c("San Diego,CA","Los Angeles,CA","Monterey,CA",
+                             "Portland,OR","Eugene,OR","Salem,OR"),
+                 blood_pressure=c("120/90","140/85","135/110","125/102","128/92","145/118"),
+                 stringsAsFactors = FALSE)
+
+df
+```
+
+
+Note that the *name* column has first and last names and the *location* column encodes a city and state. And we also have a column with blood pressure information. We might want to split or *separate* these columns out into separate columns to facilitate summaries across states. Why would we to do this ? Well what if we wanted to aggregate across states or maybe create a bar chart of average age across states ? Or look at a systolic vs diastolic blood pressure across the States ?  As is, there is no convenient way to access the *State* or blood pressure info. The *separate* function will help. 
+
+
+```{r}
+(split.location <- separate(df,col=location,into=c("city","state"),sep=","))
+```
+
+
+```{r}
+split.location %>% group_by(state) %>% summarize(ave=mean(age))
+```
+And we could create a bar chart
+
+```{r}
+split.location %>% group_by(state) %>% 
+  summarize(ave=mean(age)) %>% 
+  ggplot(aes(x=state,y=ave)) + geom_bar(stat="identity") + 
+  ggtitle("Average Age Across State") + ylab("Average Age") + xlab("State")
+```
+
+
+Let's break out the blood pressure by systolic and disastolic:
+
+```{r}
+(split.location.bp <- split.location %>% 
+  separate(col=blood_pressure,into=c("systolic","diastolic"),sep="\\/"))
+```
+
+Plot the systolic vs diastloic for each state. Use facets for this. Given that we don't have much data, the plot isn't
+mind blowing in any way though we are just trying to illustrate how we reshape the data to suit our interests. 
+
+
+```{r}
+split.location.bp %>% ggplot(aes(x=diastolic,systolic)) + geom_point() + facet_wrap(~state)
+```
+
+
+
