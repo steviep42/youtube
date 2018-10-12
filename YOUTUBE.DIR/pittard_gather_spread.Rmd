@@ -1,0 +1,112 @@
+---
+title: "Rapid R - gather(), spread(), and separate()"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+Check out the built in iris data frame. It has observations for 150 flowers. Each observation has the respective species to which that flower belongs as well as four measured variables. 
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+
+```{r}
+data(iris)
+head(iris)
+```
+
+
+
+```{r}
+pairs(iris[1:4], main = "Edgar Anderson's Iris Data", 
+                 pch = 21, 
+                 bg = c("red", "green3", "blue"))
+```
+
+What if we wanted to plot something that allowed us to compare both Sepal and Petal width and length simultaneously ?  In this graph we are using Species as fill color for the Length and Width variables. They appear in the two panels / facets which are the Petal and Sepal poritons of each flower. The problem we have is that we can't get a plot like the following without doing some "surgery" on the dataset. This where the seprate(), gather(), and spread() functions come in handy. 
+
+
+```{r echo=FALSE}
+# You won't see this in the knitted version
+data(iris)
+iris$id <- formatC(1:nrow(iris),width=3,flag="0")
+iris.tidy <- iris %>% 
+  gather(key=part_attr,val=measure,-Species,-id) %>%
+  separate(col=part_attr, into=c("Part","attr"),sep="\\.") %>%
+  spread(attr,measure)
+  
+#
+  
+ggplot(iris.tidy ,aes(x=Width,y=Length,col=Species)) + 
+  geom_point() + facet_wrap(~Part)
+```
+
+```{r}
+ggplot(iris.tidy ,aes(x=Width,y=Length,col=Part)) + 
+  geom_point() + facet_wrap(~Species)
+```
+
+
+So you could say that the Species is the identifier for each row although since there are only three Species overall, there is repetition between the names. Let's add an identifier for each observation because as we reshape the data using various tidyr functions being able to have an identifier might be important.   
+
+```{r}
+data(iris)
+iris$id <- formatC(1:nrow(iris),width=3,flag="0")
+head(iris)
+```
+
+## Gather up the measured variables
+
+We could use the *gather* function to collpase the measured variable names under one column called *attribute* and a column called *measure* to hold the respective measured value. Note how in the call to *gather* I use the negation character to collapse all variabes *except* Species which is why that column is preserved in the output.
+
+
+```{r}
+
+# Gather up the measured variables into one column
+
+iris.gathered <- gather(iris,
+                        key=part_attr,
+                        val=measure,-Species,-id)
+head(iris.gathered)
+
+# Look at three observations from each Species type
+(iris.gathered %>% group_by(Species) %>% sample_n(3))
+```
+
+On the other hand this doesn't really get us what we want. To get the plot we want requires us to have Petal and Sepal as factors or "id" variables. The length and the width are measured variabes so we need to get them into their own columns. First we have to *separate* the Flower "part" (Sepal or Petal) from the "attribute" (width or length):
+
+
+```{r}
+
+iris.gathered.tidier <- iris.gathered %>% 
+   separate(col=part_attr, into=c("Part","attr"),sep="\\.")
+
+iris.gathered.tidier %>% group_by(Species) %>% sample_n(3)
+  
+
+```
+
+So what does this get us ? Well, for starters we have some "tidier data that has a clean separation between the plant part, associated attributes, and measure. But we still can't reference the Length and Width directly within a call to ggplot - at least not very conveniently. So we aren't done yet. The next step would be to *spread* the "attr" and "measure" columns. 
+
+
+```{r}
+iris.gathered.tidiest <- iris.gathered.tidier %>% 
+  spread(attr,measure)
+
+head(iris.gathered.tidiest)
+```
+
+
+```{r}
+ggplot(iris.gathered.tidiest,
+       aes(x=Width,y=Length,col=Species)) + 
+       geom_point() + facet_wrap(~Part)
+```
+
+
+
