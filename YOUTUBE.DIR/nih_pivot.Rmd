@@ -1,0 +1,100 @@
+---
+title: "Rapid R - Wrangling NIH Funding Data"
+output: html_notebook
+---
+
+The NIH Reporter offers detailed information on to whom and to where NIH funding is directed. The web tool
+is called "the"RePORT - Research Portfolio Online Reporting Tools and is available at https://projectreporter.nih.gov/reporter.cfm  In this notebook I'll work with some data I've downloaded relating to the funding obtained by three states, Georgia, Maryland, and California, for the years 2013, 2015, and 2017. I pulled
+data relating to the top 5 "earners" of NIH money for each of those years within each state. 
+
+
+```{r}
+# Load some needed libraries
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+```
+
+
+Let's read in the data directly from the Excel spreadsheet. This way, we don't have to first save the data from the Excel spreadsheet into a .CSV file although that is always an option. 
+
+```{r}
+# Use the readxl package to get the info
+funding <- read_xlsx("~/Downloads/funding_ga_ma_ca_2.xlsx")
+```
+
+What about plotting the data to get an idea about how the states compare across the three years we tracked. 
+
+```{r}
+
+# Get finding in terms of / 1,000,000
+funding$FUNDING <- funding$FUNDING/1000000
+funding %>% slice(1:15)
+```
+
+Let's plot this to make it easier to interpret
+
+```{r}
+
+# We'll make YEAR a factor to make the colors descrete
+funding.2 <- funding %>% mutate(YEAR=factor(YEAR))
+funding.2 %>% 
+  group_by(YEAR,STATE) %>% summarize(sm=sum(FUNDING)) %>% 
+  ggplot(aes(x=STATE,y=sm,fill=YEAR)) + 
+  geom_bar(stat="identity",position="dodge") + 
+  labs(title = "NIH Funding to CA,GA, and MD",
+       subtitle = "Sum of Funding $ to Top 5 Organizations in Each State",
+       caption = "Source: NIH Research Portfolio Online Reporting Tools", 
+       x = "Year", y = "$ / 1,000,000") 
+
+```
+
+
+
+Maryland seems to have not recovered to 2013 levels but the variance in funding is much greater in that State which suggests that some of the top earners in that state might not have gotten as much money as previously or that maybe not all organizations were present in all three years we tracked. 
+
+```{r}
+funding.2 %>% group_by(STATE) %>% summarize(var=var(FUNDING))
+```
+
+Let's Look at John Hopkins compared to the other top 4 organizations. They typically bring in a signficant degree of NIH funding. 
+
+```{r}
+funding.2 %>% filter(STATE=="MD") %>% 
+  group_by(YEAR,ORGANIZATION) %>% 
+  summarize(total=sum(FUNDING)) %>% arrange(desc(total))
+
+```
+
+
+Now let's look at a typical spreadsheet view of the data wherein the funding for each year is in it's own
+column. This might be more appealing to an accountant although it isn't what we could call *tidy* data simply
+because each column is in reality an instance of the "YEAR" column. On the other hand, data can be easily shaped
+and reshaped with R so it's not a big deal. In fact, reshaping it might reveal something interesting.
+
+```{r}
+spread(funding.2,YEAR,FUNDING) %>% 
+  arrange(STATE) %>% slice(1:20)
+```
+
+
+Let's find institutions that made the top 5 for all 3 years
+
+```{r}
+spread(funding.2,YEAR,FUNDING) %>% 
+  arrange(STATE) %>% filter(complete.cases(.))
+
+```
+
+
+Find organizations that made it into the Top 5 at least one of the years. Notice that Univ of SAN FRAN shows up as being two unique organizations because there is an extra comma in the name for 2015 and 2017. Real data is usually dirty data so this is to be expected. 
+
+```{r}
+spread(funding.2,YEAR,FUNDING) %>% 
+  arrange(STATE) %>% filter(!complete.cases(.))
+
+```
+
+
+
