@@ -1,0 +1,90 @@
+---
+title: "Rapid R - Wrangling NIH Funding Data"
+output:
+  html_document:
+    df_print: paged
+---
+
+The NIH Reporter offers detailed information on to whom and to where NIH funding is directed. The web tool is called "the"RePORT - Research Portfolio Online Reporting Tools and is available at https://projectreporter.nih.gov/reporter.cfm  In this notebook I'll work with some data I've downloaded relating to the funding obtained by three states, Georgia, Maryland, and California, for the years 2013, 2015, and 2017. I pulled data relating to the top 5 "earners" of NIH money for each of those years within each state. 
+
+See https://stackoverflow.com/questions/29322556/drawing-colored-us-state-map-with-cut-number-in-r
+
+```{r}
+# Load some needed libraries
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(datasets)
+```
+
+
+Let's read in the data directly from the Excel spreadsheet. This way, we don't have to first save the data from the Excel spreadsheet into a .CSV file although that is always an option. 
+
+```{r}
+# Use the readxl package to get the info
+funding <- read_xlsx("~/Dropbox/YOUTUBE_VIDS.DIR/funding_location.xlsx")
+funding$FUNDING <- round(funding$FUNDING/1000000,0)
+funding$AWARDS <- NULL
+names(funding) <- c("location","funding")
+funding$region <- tolower(funding$location)
+```
+
+Do some prep and get the center of each State in terms of latutide and longitude
+
+```{r}
+head(state.center)
+head(state.abb)
+states <- data.frame(state.center, state.abb)
+states <- states[!(states$state.abb %in% c("AK", "HI")),] # they aren't part of states_map
+
+head(states)
+```
+
+Let's plot this to make it easier to interpret
+
+```{r}
+# See https://stackoverflow.com/questions/29322556/drawing-colored-us-state-map-with-cut-number-in-r
+
+states_map <- map_data("state")
+
+p1 <- ggplot()
+# borders
+p1 <- p1 + geom_map(data=states_map, map=states_map,
+                    aes(map_id=region),
+                    color="white", size=0.15)
+
+p1 <- p1 + geom_map(data=funding, map=states_map,
+                    aes(fill=funding, map_id=region),
+                    color="white", size=0.15)
+
+p1 <- p1 + geom_text(data=states, 
+                     aes(x=x, y=y, label=state.abb, group=NULL), size=2.5)
+
+# decent projection
+p1 <- p1 + coord_map("albers", lat0=39, lat1=45)
+
+# better theme
+p1 <- p1 + labs(x=NULL, y=NULL,title="Funding $ In Millions - 2017")
+p1 <- p1 + theme_bw()
+p1 <- p1 + theme(panel.grid=element_blank())
+p1 <- p1 + theme(panel.border=element_blank())
+p1 <- p1 + theme(axis.ticks=element_blank()) 
+p1 <- p1 + scale_fill_distiller(palette="RdYlBu")
+p1
+```
+
+But there is an easier way. There is the wonderful *leaflet* package and there is the *urbnmapr* package which is very straightforward to use. The key is to join our funding data that has a location with the states data built into the *urbnmapr* package. This is a snap with the dplyr family of join commands: 
+
+
+```{r}
+library(urbnmapr)
+mapdata <- left_join(funding,urbnmapr::states,by=c("location"="state_name"))  
+mapdata %>%
+ggplot(aes(long, lat, group = group, fill = funding)) + 
+  geom_polygon(color = NA) +
+  scale_fill_distiller(palette="RdYlBu") +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  ggtitle("Funding $ In Millions - 2017") 
+
+```
