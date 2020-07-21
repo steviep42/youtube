@@ -1,0 +1,105 @@
+---
+title: "First Decision Tree In R"
+author: Steve Pittard
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rpart)
+library(rpart.plot)
+library(ggplot2)
+```
+
+## Decisions, Decisions
+
+Decision trees are an easy way to get started in the world of predictive modeling. They don't require you to do a lot of data preparation and they handle continuous and categorical variables. 
+
+To illustrate the power of Decision Trees we'll use the Pima Indians dataset which is a frequently employed data frame to illustrate classification problems. It is part of the "mlbench" package or you can read it directly from the Internet:
+
+
+```{r cars}
+url <- "https://raw.githubusercontent.com/steviep42/bios534_spring_2020/master/data/pima.csv"
+
+pm <- read.csv(url)
+head(pm)
+```
+
+We have 768 rows and 9 columns known as "features". We will use 8 of these features to predict the outcome variable which in this case is the "diabetes" column. 
+
+```{r}
+table(pm$diabetes)
+```
+
+Let's generate a baseline model which gives us a percentage to beat in any model we might construct. This is the ratio of the NULL case ('negative') over the total number of records:
+
+```{r}
+round(table(pm$diabetes)[1]/nrow(pm),2)
+```
+
+If we don't build a model at all and arbitrarily say that a person at random from this data is negative for diabetes then we would be accurate 65% of the time. Ideally we could build a predictive model that would improve this accuracy.
+
+## Build The Tree
+
+It's easy to build a decision tree to predict whether someone will have diabetes or not based on all other variables. This does not mean that the resulting model will be highly accurate but we'll never know unless we do some experimentation. 
+
+
+```{r pressure, echo=FALSE}
+library(rpart)
+library(rpart.plot)
+(first_tree <- rpart(diabetes ~ ., data = pm, cp = 0.015))
+```
+
+The cool thing is that we can easily visualize this. The first thing you see is that a primary variable for consideration, at least in this case, is whether glucose is < 128 after which we move to other decsisions with a goal of classifying someone as postivie or negative. A tree is something you could show someone who does has not have a statistical or quantitative background and they would "get it"
+
+
+```{r}
+rpart.plot(first_tree)
+```
+
+
+Let's make a prediction using the same data we used to create the model. Normally we wouldn't do this but in the interest of demonstrating the rpart function, we'll forgo that conversations. 
+
+
+```{r}
+pred_labels <- predict(first_tree, pm, type="class")
+pred_labels[1:10]
+```
+
+Now make some predictions
+
+```{r}
+(mytable <- table(our_predictions=pred_labels, reality=pm$diabetes))
+```
+
+So our model agrees with reality 470 + 137 = 607 out of 768 cases for an accuracy of 0.79 which is a misclassification rate of 1 - 0.79 = .21
+
+
+```{r}
+accuracy <- sum(diag(mytable))/sum(mytable)
+round(accuracy,3)
+```
+
+So when we made our first tree you might have noticed that we used an argument called "cp" which influences the degree of complexity in the resulting tree. In short, setting this argument as we did made it easier to "read" the resulting tree possibly at the expense of accuracy. Let me show you what I mean. 
+
+```{r}
+unpruned_tree <- rpart(" diabetes ~ .", data = pm)
+rpart.plot(unpruned_tree)
+```
+
+
+ Let's make some predictions using this unpruned tree. 
+
+```{r}
+unpruned_pred_labels <- predict(unpruned_tree, pm, type="class")
+(mytable <- table(unpruned_pred_labels, pm$diabetes))
+accuracy <- sum(diag(mytable))/sum(mytable)
+round(accuracy,3)
+```
+
+Ah, so it turns out that the "unpruned" version of the tree provides greater accuracy although it might have been a bit more complicated to "read". One should always balance interpretability with accuracy or any other performance measure such as sensitivity or specificity. 
+
+We've only scratched the surface here but this example should prove to you that building a Decision Tree for purposes of classification is fairly straightforward. There is much more to learn about how to improve it. 
+
